@@ -19,6 +19,9 @@ Game = (function(_super) {
     this.cameraTime = 0;
     this.cameraSpeed = 0.1;
     this.backgroundSpeed = 0.1;
+    this.verticalMargin = 64;
+    this.height = 500;
+    this.width = 1024;
   }
 
   Game.prototype.isCollided = function(aObject, bObject) {
@@ -57,24 +60,26 @@ Game = (function(_super) {
     this.player.update(dt, playerCollisions);
     if (this.cameraTime <= 0) {
       this.cameraTime = this.cameraPeriod;
-      this.camera.x = lerp(this.cameraSpeed, this.camera.x, this.player.pos.x + this.lookahead - atom.width / 2);
-      this.lookahead = lerp(0.01, this.lookahead, this.player.velocity.x * atom.width / 20);
+      this.camera.x = lerp(this.cameraSpeed, this.camera.x, this.player.pos.x + this.player.width / 2 + this.lookahead - atom.width / 2);
+      this.lookahead = lerp(0.01, this.lookahead, this.player.velocity.x * atom.width / 16);
     }
     return this.cameraTime -= dt;
   };
 
   Game.prototype.draw = function() {
-    var i, layer, numLayers, object, _i, _j, _len, _ref;
+    var i, layer, leftGrad, numLayers, object, rightGrad, sideMargin, _i, _j, _len, _ref;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, atom.width, atom.height);
+    this.ctx.save();
+    this.ctx.translate((atom.width - this.width) / 2, this.verticalMargin);
     numLayers = this.world.backgroundLayers.length;
     for (i = _i = 0; 0 <= numLayers ? _i < numLayers : _i > numLayers; i = 0 <= numLayers ? ++_i : --_i) {
       layer = this.world.backgroundLayers[i];
       this.ctx.save();
       this.ctx.translate(-this.camera.x / (8 * (numLayers - i + 1)), 0);
-      this.ctx.drawImage(layer, layer.width, 0, layer.width, layer.height);
+      this.ctx.drawImage(layer, layer.width - 1, 0, layer.width, layer.height);
       this.ctx.drawImage(layer, 0, 0, layer.width, layer.height);
-      this.ctx.drawImage(layer, -layer.width, 0, layer.width, layer.height);
+      this.ctx.drawImage(layer, -layer.width + 1, 0, layer.width, layer.height);
       this.ctx.restore();
     }
     this.ctx.save();
@@ -84,7 +89,7 @@ Game = (function(_super) {
       object = _ref[_j];
       this.ctx.save();
       this.ctx.translate(object.collision.x, object.collision.y);
-      this.ctx.fillStyle = '#202020';
+      this.ctx.fillStyle = '#1c1915';
       this.ctx.fillRect(0, 0, object.collision.width, object.collision.height);
       this.ctx.restore();
     }
@@ -99,7 +104,21 @@ Game = (function(_super) {
     this.ctx.translate(this.player.pos.x, this.player.pos.y);
     this.player.draw(this.ctx);
     this.ctx.restore();
-    return this.ctx.restore();
+    this.ctx.restore();
+    this.ctx.restore();
+    this.ctx.fillStyle = 'black';
+    this.ctx.fillRect(0, atom.height - this.verticalMargin, atom.width, atom.height - (atom.height - this.verticalMargin));
+    sideMargin = (atom.width - this.width) / 2;
+    leftGrad = this.ctx.createLinearGradient(0, 0, sideMargin, 0);
+    rightGrad = this.ctx.createLinearGradient(atom.width - sideMargin, 0, sideMargin + (atom.width - sideMargin), 0);
+    leftGrad.addColorStop(0, 'rgba(0,0,0,1)');
+    leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    rightGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    rightGrad.addColorStop(1, 'rgba(0,0,0,1)');
+    this.ctx.fillStyle = leftGrad;
+    this.ctx.fillRect(0, 0, sideMargin, atom.height);
+    this.ctx.fillStyle = rightGrad;
+    return this.ctx.fillRect(atom.width - sideMargin, 0, sideMargin, atom.height);
   };
 
   return Game;
@@ -119,7 +138,8 @@ Player = (function() {
         frameSpeed: function(v) {
           return Math.abs(v.x) * 0.3;
         },
-        repeat: 'loop'
+        repeat: 'loop',
+        offset: 3
       },
       standing: {
         src: './img/standing.png',
@@ -127,7 +147,8 @@ Player = (function() {
         frameSpeed: function(v) {
           return 0;
         },
-        repeat: 'once'
+        repeat: 'once',
+        offset: 0
       },
       jumping: {
         src: './img/jumping.png',
@@ -135,7 +156,8 @@ Player = (function() {
         frameSpeed: function(v) {
           return 3;
         },
-        repeat: 'once'
+        repeat: 'once',
+        offset: 0
       },
       landing: {
         src: './img/landing.png',
@@ -144,7 +166,8 @@ Player = (function() {
           return 2;
         },
         repeat: 'continue',
-        next: 'walking'
+        next: 'walking',
+        offset: 0
       }
     };
     for (animation in this.animations) {
@@ -196,7 +219,7 @@ Player = (function() {
 
   Player.prototype.changeSequence = function(sequence) {
     this.currentSequence = sequence;
-    this.currentFrame = 0;
+    this.currentFrame = this.animations[sequence].offset;
     return this.frameTime = this.framePeriod;
   };
 

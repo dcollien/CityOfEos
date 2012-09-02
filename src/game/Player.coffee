@@ -6,6 +6,7 @@ class Player
         frames: 8
         frameSpeed: (v) => Math.abs(v.x) * 0.3
         repeat: 'loop'
+        offset: 3
       }
 
       standing: {
@@ -13,6 +14,7 @@ class Player
         frames: 1
         frameSpeed: (v) => 0
         repeat: 'once'
+        offset: 0
       }
 
       jumping: {
@@ -20,6 +22,7 @@ class Player
         frames: 6
         frameSpeed: (v) => 3
         repeat: 'once'
+        offset: 0
       }
 
       landing: {
@@ -28,6 +31,7 @@ class Player
         frameSpeed: (v) => 2
         repeat: 'continue'
         next: 'walking'
+        offset: 0
       }
 
     for animation of @animations
@@ -86,7 +90,7 @@ class Player
 
   changeSequence: (sequence) ->
     @currentSequence = sequence
-    @currentFrame = 0
+    @currentFrame = @animations[sequence].offset
     @frameTime = @framePeriod
 
   handleAnimation: ->

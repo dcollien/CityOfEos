@@ -21,6 +21,10 @@ class Game extends atom.Game
 
     @backgroundSpeed = 0.1
 
+    @verticalMargin = 64
+    @height = 500
+    @width = 1024
+
   isCollided: (aObject, bObject) ->
     a = @getCollision aObject
     b = @getCollision bObject
@@ -44,8 +48,8 @@ class Game extends atom.Game
     if @cameraTime <= 0
       @cameraTime = @cameraPeriod
 
-      @camera.x = lerp @cameraSpeed, @camera.x, (@player.pos.x + @lookahead - atom.width/2)
-      @lookahead = lerp 0.01, @lookahead, @player.velocity.x*atom.width/20
+      @camera.x = lerp @cameraSpeed, @camera.x, (@player.pos.x + @player.width/2 + @lookahead - atom.width/2)
+      @lookahead = lerp 0.01, @lookahead, @player.velocity.x*atom.width/16
 
 
     @cameraTime -= dt
@@ -53,6 +57,10 @@ class Game extends atom.Game
   draw: ->
     @ctx.fillStyle = 'black'
     @ctx.fillRect 0, 0, atom.width, atom.height
+
+    @ctx.save()
+    @ctx.translate (atom.width-@width)/2, @verticalMargin
+
     numLayers = @world.backgroundLayers.length
     for i in [0...numLayers]
       layer = @world.backgroundLayers[i]
@@ -61,9 +69,9 @@ class Game extends atom.Game
       @ctx.translate -@camera.x/(8*(numLayers-i+1)), 0
 
 
-      @ctx.drawImage layer, layer.width, 0, layer.width, layer.height
+      @ctx.drawImage layer, layer.width-1, 0, layer.width, layer.height
       @ctx.drawImage layer, 0, 0, layer.width, layer.height
-      @ctx.drawImage layer, -layer.width, 0, layer.width, layer.height
+      @ctx.drawImage layer, -layer.width+1, 0, layer.width, layer.height
 
       @ctx.restore()
 
@@ -75,7 +83,7 @@ class Game extends atom.Game
     for object in @world.collisionObjects
       @ctx.save()
       @ctx.translate object.collision.x, object.collision.y
-      @ctx.fillStyle = '#202020'
+      @ctx.fillStyle = '#1c1915'
       @ctx.fillRect 0, 0, object.collision.width, object.collision.height
       @ctx.restore()
 
@@ -93,3 +101,26 @@ class Game extends atom.Game
     @ctx.restore()
 
     @ctx.restore()
+    @ctx.restore()
+
+    @ctx.fillStyle = 'black'
+    @ctx.fillRect 0, atom.height-@verticalMargin, atom.width, atom.height - (atom.height-@verticalMargin)
+
+
+    sideMargin = (atom.width-@width)/2
+    leftGrad = @ctx.createLinearGradient 0, 0, sideMargin, 0
+    rightGrad = @ctx.createLinearGradient (atom.width - sideMargin), 0, sideMargin + (atom.width - sideMargin), 0
+
+    leftGrad.addColorStop 0, 'rgba(0,0,0,1)'
+    leftGrad.addColorStop 1, 'rgba(0,0,0,0)'
+
+    rightGrad.addColorStop 0, 'rgba(0,0,0,0)'
+    rightGrad.addColorStop 1, 'rgba(0,0,0,1)'
+
+    @ctx.fillStyle = leftGrad
+
+    @ctx.fillRect 0, 0, sideMargin, atom.height
+
+    @ctx.fillStyle = rightGrad
+
+    @ctx.fillRect (atom.width - sideMargin), 0, sideMargin, atom.height
